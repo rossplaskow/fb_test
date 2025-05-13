@@ -1,61 +1,50 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <title>Rive layouts/Data-binding demo</title>
-
+  <meta charset="utf-8">
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Rive layout / data-binding demo</title>
   <style>
-    html, body { height: 100%; margin: 0; font-family: sans-serif; }
+    html, body {height:100%; margin:0; background:#252525;}
     #rive-canvas{
-      position: absolute; inset: 0;
-      width: 100%; height: 100%;
-      background-color:#252525;
+      position:fixed; inset:0;
+      width:100vw; height:100dvh;
+      display:block; background:#252525;
     }
   </style>
-
   <script src="https://unpkg.com/@rive-app/webgl2@latest"></script>
 </head>
-
 <body>
   <canvas id="rive-canvas"></canvas>
 
   <script>
-
     const layout = new rive.Layout({
-      fit: rive.Fit.Layout,     
-      alignment: rive.Alignment.Center,
-      layoutScaleFactor: 1
+      fit: rive.Fit.Layout,
+      alignment: rive.Alignment.Center
     });
-
 
     const riveInstance = new rive.Rive({
       src: "fb_2.riv",
-      artboard: "viewport",          
+      artboard: "viewport",
       stateMachines: "State Machine 1",
       canvas: document.getElementById("rive-canvas"),
       layout,
       autoplay: true,
-      onLoad() {
-        riveInstance.resizeDrawingSurfaceToCanvas(); 
-      }
+      onLoad() { riveInstance.resizeDrawingSurfaceToCanvas(); }
     });
 
-
-    const DELAY_MS = 1;  
-    let timerId = null;
-
-    function scheduleResize() {
-      if (document.hidden) return;         
-      clearTimeout(timerId);
-      timerId = setTimeout(() => {
-        riveInstance.resizeDrawingSurfaceToCanvas();
-      }, DELAY_MS);
-    }
-
+    let timerId;
+    const scheduleResize = () => {
+      if (document.hidden) return;
+      cancelAnimationFrame(timerId);
+      timerId = requestAnimationFrame(() =>
+        riveInstance.resizeDrawingSurfaceToCanvas()
+      );
+    };
     window.addEventListener("resize", scheduleResize);
     window.matchMedia(`(resolution:${window.devicePixelRatio}dppx)`)
           .addEventListener("change", scheduleResize);
-
   </script>
 </body>
 </html>
