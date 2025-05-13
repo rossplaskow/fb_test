@@ -2,49 +2,67 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
+  <!-- Makes the visual viewport the layout viewport and removes notch padding -->
   <meta name="viewport"
         content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>Rive layout / data-binding demo</title>
+  <title>Rive layout / data-binding demo (no flicker)</title>
+
   <style>
-    html, body {height:100%; margin:0; background:#252525;}
-    #rive-canvas{
-      position:fixed; inset:0;
-      width:100vw; height:100dvh;
-      display:block; background:#252525;
+    /* Page fills the screen with a dark backdrop */
+    html, body { height: 100%; margin: 0; background: #252525; }
+
+    /* Canvas is locked to every edge of the visual viewport */
+    #rive-canvas {
+      position: fixed;        /* stays put during pinch-zoom / panning */
+      inset: 0;               /* shorthand for top/right/bottom/left: 0 */
+      width: 100vw;           /* full visual-viewport width             */
+      height: 100dvh;         /* full dynamic viewport height           */
+      display: block;         /* removes small inline-element gaps      */
+      background: #252525;    /* same colour as page to mask overdraw   */
     }
   </style>
+
+  <!-- Latest WebGL-enabled build -->
   <script src="https://unpkg.com/@rive-app/webgl2@latest"></script>
 </head>
+
 <body>
   <canvas id="rive-canvas"></canvas>
 
   <script>
+    /* --------------- Rive setup --------------- */
     const layout = new rive.Layout({
-      fit: rive.Fit.Layout,
+      fit: rive.Fit.Layout,          // preserve artboard aspect
       alignment: rive.Alignment.Center
     });
 
     const riveInstance = new rive.Rive({
-      src: "fb_2.riv",
-      artboard: "viewport",
-      stateMachines: "State Machine 1",
-      canvas: document.getElementById("rive-canvas"),
+      src:       'fb_2.riv',         // your .riv file
+      artboard:  'viewport',
+      stateMachines: 'State Machine 1',
+      canvas: document.getElementById('rive-canvas'),
       layout,
       autoplay: true,
       onLoad() { riveInstance.resizeDrawingSurfaceToCanvas(); }
     });
 
-    let timerId;
-    const scheduleResize = () => {
-      if (document.hidden) return;
-      cancelAnimationFrame(timerId);
-      timerId = requestAnimationFrame(() =>
-        riveInstance.resizeDrawingSurfaceToCanvas()
-      );
-    };
-    window.addEventListener("resize", scheduleResize);
+    /* --------------- Debounced resize handler (kills flicker) --------------- */
+    let resizeTimer;
+    const RESIZE_DELAY = 1;          // ms of silence before we resize
+
+    function onResize() {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => {
+        riveInstance.resizeDrawingSurfaceToCanvas();
+      }, RESIZE_DELAY);
+    }
+
+    /* Global window resizes (desktop + mobile orientation) */
+    window.addEventListener('resize', onResize);
+
+    /* Hi-DPI changes (e.g. dragging browser between monitors) */
     window.matchMedia(`(resolution:${window.devicePixelRatio}dppx)`)
-          .addEventListener("change", scheduleResize);
+          .addEventListener('change', onResize);
   </script>
 </body>
 </html>
